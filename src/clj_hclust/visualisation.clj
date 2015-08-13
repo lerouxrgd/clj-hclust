@@ -7,7 +7,7 @@
            [org.apache.batik.swing JSVGCanvas]                                 
            [org.apache.batik.util XMLResourceDescriptor]))
 
-;; TODO
+;; TODO hclust->newick
 (comment
   [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24]
   "(((0:0,1:0):0.5,((2:0,3:0):1.12,4:0):1.41):2.24);")
@@ -37,54 +37,63 @@
 #_(mk-svgviz (cos-sin-svg))
 
 (def C [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24])
+(def D [[[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24] [5 5 0] 3.33])
 
-#_(defn ttt [clusters]
-  (loop [d-els (doto (java.util.ArrayDeque.) (.addFirst clusters))
-         d-dst (doto (java.util.ArrayDeque.) (.addFirst (nth 2 clusters)))
-         branch (nth 1 clusters)]
-    (if )
-    ))
-#_(ttt C)
+(defn shape [cluster]
+  (cond 
+    (not (sequential? cluster)) :value
+    (not (sequential? (first cluster))) :leaf
+    :else :cluster))
 
-(defn mk-dists [clustering]
-  (let [r 5 ; svg cirle rayon => svg max heigt = r * nb-els
-        xmax 500 ; svg max width 
-        dmax (last clustering)
-        nb-vals (atom 0)
-        last-val (atom nil)
-        leaf? (atom false)
+(defn hclust->points
+  "rad: svg cirle radius => svg max heigt = 2 * rad * nb-leaves
+   xmax: svg max width"
+  [clustering {:keys [rad xmax]}]
+  (let [dmax (last clustering)
         nb-leaves (atom 0)
-        res (atom [])]
+        bary-stack (java.util.ArrayDeque.)
+        points (atom [])]
     (clojure.walk/postwalk
      (fn [f]
-       (when (not (sequential? f))
-         (swap! nb-vals inc)
-         (reset! last-val f))
-       (when (and (sequential? f) (< @nb-vals 3))
-         (swap! res conj {-1 [(double (* xmax (- 1 (/ @last-val dmax)))) "???"]}) ;; TODO find out y-coord
-         (reset! nb-vals 0))
-       (when @leaf?
-         (swap! res conj {(first f) [xmax (* r (+ 1 (* 2 @nb-leaves)))]})
-         (swap! nb-leaves inc)
-         (reset! leaf? false)
-         (reset! nb-vals 0))
-       (when (= 3 @nb-vals) ; prepare flag for next iter
-         (reset! leaf? true))
+       (when (sequential? f)
+         (let [l (nth f 0) r (nth f 1) d (nth f 2) 
+               shape-l (shape l) shape-r (shape r)]
+           (cond
+             ;; merge two leaves
+             (and (= :leaf shape-l) (= :leaf shape-r))
+             (do (swap! points conj {:type :leaf :id (first l) 
+                                     :x xmax :y (* rad (+ 1 (* 2 @nb-leaves)))})
+                 (swap! nb-leaves + 1)
+                 (swap! points conj {:type :leaf :id (first r) 
+                                     :x xmax :y (* rad (+ 1 (* 2 @nb-leaves)))})
+                 (swap! nb-leaves + 1)
+                 (let [center (* 2 (- @nb-leaves 1) rad)
+                       y-up (- center rad)
+                       y-down (+ center rad)]
+                   (swap! points conj {:type :fork :span [y-up y-down]
+                                       :x (double (* xmax (- 1 (/ d dmax)))) :y center})
+                   (.push bary-stack center)))
+             ;; merge cluster and one leaf
+             (and (= :cluster shape-l) (= :leaf shape-r))
+             (do (swap! points conj {:type :leaf :id (first r) 
+                                     :x xmax :y (* rad (+ 1 (* 2 @nb-leaves)))})
+                 (swap! nb-leaves + 1)
+                 (let [y-up (.poll bary-stack)
+                       center (+ (* 2 rad) y-up)
+                       y-down (+ center rad)]
+                   (swap! points conj {:type :fork :span [y-up y-down]
+                                       :x (double (* xmax (- 1 (/ d dmax)))) :y center})
+                   (.push bary-stack center)))
+             ;; merge two clusters
+             (and (= :cluster shape-l) (= :cluster shape-r))
+             (let [y-up (.poll bary-stack)
+                   y-down (.poll bary-stack)
+                   center (/ (+ y-up y-down) 2.)] 
+               (swap! points conj {:type :fork :span [y-up y-down]
+                                   :x (double (* xmax (- 1 (/ d dmax)))) :y center})
+               (.push bary-stack center)))))
        f)
      clustering)
-    @res))
-(println (mk-dists C))
-
-;; simple print
-(let [res (atom 0)]
-  (clojure.walk/postwalk
-   (fn [f]
-     (println f)
-     (when (and (sequential? f)
-                (not (sequential? (first f))))
-       (swap! res inc))
-     f) 
-   C)
-  @res)
-
+    @points))
+(hclust->points C {:rad 5 :xmax 500})
 
