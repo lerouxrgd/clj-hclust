@@ -7,6 +7,5 @@
                  [net.mikera/core.matrix "0.33.2"]
                  [net.mikera/vectorz-clj "0.29.0"]
                  [hiccup "1.0.5"]
-                 [org.clojars.pallix/analemma "1.0.0" :exclusions [org.clojure/clojure]]
                  [org.clojars.pallix/batik "1.7.0"]])
 
