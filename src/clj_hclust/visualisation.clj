@@ -1,14 +1,5 @@
 (ns clj-hclust.visualisation
-  (:require [hiccup.core :as h]
-            [clj-hclust.batik :as b]))
-
-;; TODO hclust->newick (using "format" from postwalk?)
-(comment
-  [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24]
-  "(((0:0,1:0):0.5,((2:0,3:0):1.12,4:0):1.41):2.24);")
-
-(def C [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24])
-(def D [[[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24] [5 5 0] 3.33])
+  (:require [hiccup.core :as h]))
 
 (defn shape [cluster]
   (cond 
@@ -16,8 +7,10 @@
     (not (sequential? (first cluster))) :leaf
     :else :cluster))
 
-(defn hclust->points [clustering {:keys [rad xmax]}]
-  (let [dmax (last clustering)
+(defn hclust->points [clustering style]
+  (let [xmax (get-in style [:params :dendro-width]) ; svg max width (w/o radius and text)
+        rad (get-in style [:circle-style :r]); ; svg max heigt = 2*rad*nb-leaves
+        dmax (last clustering)
         nb-leaves (atom 0)
         bary-stack (java.util.ArrayDeque.)
         points (atom (transient []))]
@@ -80,41 +73,51 @@
          "V" (move (:y-span point))
          "H" (move (:x-span point)))))
 
-(defn points->hiccup 
-  "rad: svg cirle radius => svg max heigt = 2 * rad * nb-leaves
-   xmax: svg max width"
-  [points {:keys [rad xmax]}]
-  (let [link {:fill "none" :stroke "#CCC" :stroke-width "1.5px"}
-        node {:font "10px sans-serif"}
-        circle [:circle {:r rad :fill "#FFF" :stroke "#4682B4" :stroke-width "1.5px"}]
-        text {:dx 8 :dy 3 :text-anchor "start"}
-        xmlns {"xmlns:svg" "http://www.w3.org/2000/svg"
-	       "xmlns" "http://www.w3.org/2000/svg"
-	       "xmlns:xlink" "http://www.w3.org/1999/xlink"
-	       "version" "1.0"}]
+(defn points->hiccup [points style]
+  {:pre [(if-let [names (:names style)] (vector? names) true)]}
+  (let [{:keys [link-style node-style circle-style text-style xmlns]} style
+        id->name (if-let [names (:names style)]
+                   (fn [id] (get names id))
+                   identity)]
     (loop [svg (transient [:svg xmlns]) 
-           [point & others] points
-           nb-leaves 0]
+           [point & others] points]
       (if point
         (cond
           (= :leaf (:type point))
-          (recur (conj! svg [:g (conj node [:transform (translate point)])
-                             circle
-                             [:text text (:id point)]])
-                 others
-                 (inc nb-leaves))
+          (recur (conj! svg [:g (conj node-style [:transform (translate point)])
+                             [:circle circle-style]
+                             [:text text-style (id->name (:id point))]])
+                 others)
           (= :fork (:type point))
           (recur (-> svg
-                     (conj! [:path (conj link [:d (mk-path point :up)])])
-                     (conj! [:path (conj link [:d (mk-path point :down)])]))
-                 others
-                 nb-leaves))
+                     (conj! [:path (conj link-style [:d (mk-path point :up)])])
+                     (conj! [:path (conj link-style [:d (mk-path point :down)])]))
+                 others))
         (persistent! svg)))))
 
-(let [css {:rad 5 :xmax 500}]
-  (-> C
-      (hclust->points css)
-      (points->hiccup css)
-      (h/html)
-      (b/svg-jframe 600 100)))
+(def svg-default
+  {:link-style {:fill "none" :stroke "#CCC" :stroke-width "1.5px"}
+   :node-style {:font "10px sans-serif"}
+   :circle-style {:r 5 :fill "#FFF" :stroke "#4682B4" :stroke-width "1.5px"}
+   :text-style {:dx 8 :dy 3 :text-anchor "start"}
+   :params {:dendro-width 500}
+   :xmlns {"xmlns:svg" "http://www.w3.org/2000/svg"
+           "xmlns" "http://www.w3.org/2000/svg"
+           "xmlns:xlink" "http://www.w3.org/1999/xlink"
+           "version" "1.0"}})
+
+(defn hclust->svg
+  ([clustering]
+   (hclust->svg clustering {}))
+  ([clustering style]
+   (let [style (merge-with merge svg-default style)]
+     (-> clustering
+         (hclust->points style)
+         (points->hiccup style)
+         (h/html)))))
+
+;; TODO hclust->newick (using "format" from postwalk?)
+(comment
+  [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24]
+  "(((0:0,1:0):0.5,((2:0,3:0):1.12,4:0):1.41):2.24);")
 
