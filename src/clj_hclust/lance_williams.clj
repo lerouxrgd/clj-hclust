@@ -1,9 +1,19 @@
 (ns clj-hclust.lance-williams
   (:require [clojure.core.matrix :as m]))
 
-(defn mvalidate [m]
+(defn prepare-m [m lw-updater]
   {:pre [(m/square? m)]}
-  (if (m/lower-triangular? m) (m/transpose m) (m/matrix m)))
+  (let [unchanged? (atom true)
+        m (cond-> m
+            (m/lower-triangular? m) 
+            (do (reset! unchanged? false)
+                (m/transpose m))
+            (= :ward lw-updater) 
+            (do (reset! unchanged? false)
+                (m/matrix (map #(m/square %) (m/slices m)))))]
+    (if @unchanged?
+      (m/matrix m)
+      m)))
 
 (defn find-dmin [m]
   (reduce (fn [acc s]
@@ -31,31 +41,49 @@
         cluster (get (:clusters state) c-id)
         res (atom 0)]
     (clojure.walk/postwalk
-     (fn [f] 
-       (when (and (sequential? f)
-                  (not (sequential? (first f))))
+     (fn [elem] 
+       (when (and (sequential? elem) (not (sequential? (first elem))))
          (swap! res inc))
-       f) 
+       elem) 
      cluster)
     @res))
 
-(defn single-link 
+(defmulti lw-update
+  (fn [dij dik djk state i j k] 
+    (:lw-updater state)))
+
+(defmethod lw-update :single-link
   [dij dik djk state i j k]
   (min dik djk))
 
-(defn complete-link 
+(defmethod lw-update :complete-link
   [dij dik djk state i j k]
   (max dik djk))
 
+(defmethod lw-update :ward
+  [dij dik djk state i j k]
+  (let [ni (clust-size i state)
+        nj (clust-size j state)
+        nk (clust-size k state)
+        n (+ ni nj nk)]
+    (+ (* dik (/ (+ ni nk) n))
+       (* djk (/ (+ nj nk) n))
+       (* -1. dij (/ nk n)))))
+
+(defmethod lw-update :default
+  [dij dik djk state i j k]
+  (throw (IllegalArgumentException. 
+          (str "No implementation for lw-updater " (:lw-updater state)))))
+
 (defn merge-clusters!
-  [m {:keys [i j dij]} state lw-updater]
+  [m {:keys [i j dij]} state]
   (doall
    (map (fn [getter]
           (let [dim (first (m/shape m))]
             (m/emap! (fn [dik djk k]
                        (if (or (= i k) (= j k))
                          dik
-                         (lw-updater dij dik djk state i j k))) 
+                         (lw-update dij dik djk state i j k))) 
                      (getter m i)
                      (getter m j)
                      (range dim))))
@@ -82,25 +110,17 @@
     (m/matrix (m/select m subv subv))))
 
 (defn hclust [m lw-updater]
-  (let [m (mvalidate m)
+  (let [m (prepare-m m lw-updater)
         dim (first (m/shape m))
-        state-init {:merged [] 
+        state-init {:lw-updater lw-updater
+                    :merged []
                     :clusters (->> (range dim) 
                                    (map #(vector % [% % 0]))
                                    (into {}))}]
     (loop [m m state state-init]
       (if (= 1 (first (m/shape m)))
-        (val (first (:clusters state))) ; only one kv-pair left, return the val
+        (val (first (:clusters state))) ; only one kv-pair left, return its val
         (let [dmin (find-dmin m)]
-          (merge-clusters! m dmin state lw-updater)
+          (merge-clusters! m dmin state)
           (recur (next-m m dmin) (next-state state dmin)))))))
-
-(comment
-  (m/set-current-implementation :vectorz)
-  (def M (m/matrix [[0.00 0.50 2.24 3.35 3.00] 
-                    [0.50 0.00 2.50 3.61 3.04]
-                    [2.24 2.50 0.00 1.12 1.41]
-                    [3.35 3.61 1.12 0.00 1.50]
-                    [3.00 3.04 1.41 1.50 0.00]]))
-  (hclust M single-link))
 
