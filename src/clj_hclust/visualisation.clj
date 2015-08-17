@@ -37,19 +37,21 @@
                (.push bary-stack [x-bary y-bary]))
                          
              ;; elem is the merge of a cluster and a leaf
-             (and (= :cluster shape-l) (= :leaf shape-r))
+             (or (and (= :cluster shape-l) (= :leaf shape-r))
+                 (and (= :leaf shape-l) (= :cluster shape-r)))
              (let [[x-clust y-clust] (.poll bary-stack)
                    y-leaf (* rad (+ 1 (* 2 @nb-leaves)))
+                   id-leaf (first (if (= :leaf shape-r) r l))
                    x-bary (* xmax (- 1. (/ d dmax)))
                    y-bary (/ (+ y-clust y-leaf) 2.)]
                (swap! points
                       #(-> %
                            (conj! {:type :fork :y-span [y-clust y-leaf] :x-span [x-clust xmax]  
                                    :x x-bary :y y-bary})
-                           (conj! {:type :leaf :id (first r) :x xmax :y y-leaf})))
+                           (conj! {:type :leaf :id id-leaf :x xmax :y y-leaf})))
                (swap! nb-leaves + 1)
-               (.push bary-stack [x-bary y-bary]))
-             
+               (.push bary-stack [x-bary y-bary]))            
+
              ;; elem is the merge of two clusters
              (and (= :cluster shape-l) (= :cluster shape-r))
              (let [[x-clust1 y-clust1] (.poll bary-stack)
