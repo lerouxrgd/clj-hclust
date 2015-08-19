@@ -1,7 +1,6 @@
 (ns clj-hclust.visualisation-test
-  (:require [clojure.test :refer :all]
-            [clj-hclust.visualisation :refer :all]
-            [clj-hclust.test-utils :refer :all]))
+  (:require [clojure.test :refer :all]         
+            [clj-hclust.visualisation :refer :all]))
 
 (def C [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24])
 
@@ -59,4 +58,9 @@
                                        (y-fork (y-leaf 0) (y-leaf 1))]))
       (is (= (:x-span (nth points 8)) [(x-fork d3) (x-fork d1)]))
       )))
+
+(deftest hclust->newick-test
+  (testing "Testing hclust->newick string result"
+    (is (= (hclust->newick C)
+           "(((0:0,1:0):0.5,((2:0,3:0):1.12,4:0):1.41):2.24);"))))
 

@@ -118,8 +118,16 @@
          (points->hiccup style)
          (h/html)))))
 
-;; TODO hclust->newick (using "format" from postwalk?)
-(comment
-  [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24]
-  "(((0:0,1:0):0.5,((2:0,3:0):1.12,4:0):1.41):2.24);")
+(defn hclust->newick [clustering]
+  (str "("
+       (clojure.walk/postwalk
+        (fn [elem]
+          (if (sequential? elem)
+            (let [[l r d] elem]
+              (if (number? l)
+                (str l ":" d)
+                (str "(" l "," r "):" d)))
+            elem))
+        clustering)
+       ");"))
 
