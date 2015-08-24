@@ -44,7 +44,7 @@ Note that the selected implementation must support `emap!` from the core.matrix 
 
 The [Lance–Williams algorithms][lance-williams] are an infinite family of agglomerative [hierarchical clustering][hc] algorithms which are represented by a recursive formula for updating cluster distances at each step (each time a pair of clusters is merged).
 
-This namespace defines a multimethod that allows for custom implementations of such algorithms:
+The namespace `clj-hclust.lance-williams` defines a multimethod that allows for custom implementations of such algorithms:
 
 ```clj
 (defmulti lw-update
@@ -53,8 +53,6 @@ This namespace defines a multimethod that allows for custom implementations of s
 ```
 
 Where the parameter `state` is a map containing `:clusters`, the vector of the current merges.
-
-```
 
 The multimethod implementations provided are:
 
@@ -113,9 +111,11 @@ Copyright &copy; 2015 Romain Leroux
 This project is licensed under the [Eclipse Public License 1.0][license].
 
 [hc]: https://en.wikipedia.org/wiki/Hierarchical_clustering
+
 [lance-williams]: https://en.wikipedia.org/wiki/Ward%27s_method#Lance.E2.80.93Williams_algorithms
 
 [apache-batik]: https://xmlgraphics.apache.org/batik/
+
 [newick]: https://fr.wikipedia.org/wiki/Newick
 
 [license]: http://www.eclipse.org/legal/epl-v10.html
