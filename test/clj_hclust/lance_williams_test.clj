@@ -36,18 +36,18 @@
                         :merged [1]})
            2))))
 
-(deftest hclust-test
+(deftest hclust-lw-test
   (testing "Testing hclust, lance-williams based clusterers"
     ;; single link
-    (is (= (hclust M :single-link)
+    (is (= (hclust-lw M :single-link)
            [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24]))
     ;; complete link
-    (is (= (hclust M :complete-link)
+    (is (= (hclust-lw M :complete-link)
            [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.5] 3.61]))
     ;; ward
-    (is (fuzzy= 0.05 0.25 (last (first (hclust M :ward)))))          ; merge 1
-    (is (fuzzy= 0.05 1.25 (last (first (second (hclust M :ward)))))) ; merge 2
-    (is (fuzzy= 0.05 2.42 (last (second (hclust M :ward)))))         ; merge 3
-    (is (fuzzy= 0.05 19.88 (last (hclust M :ward))))                 ; merge 4
+    (is (fuzzy= 0.05 0.25 (last (first (hclust-lw M :ward)))))          ; merge 1
+    (is (fuzzy= 0.05 1.25 (last (first (second (hclust-lw M :ward)))))) ; merge 2
+    (is (fuzzy= 0.05 2.42 (last (second (hclust-lw M :ward)))))         ; merge 3
+    (is (fuzzy= 0.05 19.88 (last (hclust-lw M :ward))))                 ; merge 4
     ))
 

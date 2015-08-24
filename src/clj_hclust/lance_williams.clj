@@ -1,6 +1,8 @@
 (ns clj-hclust.lance-williams
   (:require [clojure.core.matrix :as m]))
 
+(m/set-current-implementation :vectorz)
+
 (defn prepare-m [m lw-updater]
   {:pre [(m/square? m)]}
   (let [unchanged? (atom true)
@@ -109,7 +111,7 @@
         subv (filter #(not= % j) (range dim))]
     (m/matrix (m/select m subv subv))))
 
-(defn hclust [m lw-updater]
+(defn hclust-lw [m lw-updater]
   (let [m (prepare-m m lw-updater)
         dim (first (m/shape m))
         state-init {:lw-updater lw-updater
