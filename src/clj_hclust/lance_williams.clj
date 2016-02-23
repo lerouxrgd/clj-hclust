@@ -1,5 +1,6 @@
 (ns clj-hclust.lance-williams
-  (:require [clojure.core.matrix :as m]))
+  (:require [clojure.core.matrix :as m]
+            [medley.core :refer [map-keys]]))
 
 (m/set-current-implementation :vectorz)
 
@@ -35,8 +36,7 @@
           (butlast (m/slices m))))
 
 (defn clust-id [idx state]
-  (+ idx ; increment idx based on previsouly merged clusters ids 
-     (reduce #(if (>= idx %2) (inc %1) %1) 0 (:merged state))))
+  (get (:merged state) idx))
 
 (defn clust-size [idx state]
   (let [c-id (clust-id idx state)
@@ -103,7 +103,13 @@
                           (get-in state [:clusters j])
                           dij))
         (update-in [:clusters] dissoc j)
-        (update-in [:merged] conj idx))))
+        (update-in [:merged]
+                   (fn [merged]
+                     (let [[before after] (split-at idx (range (count merged)))]
+                       (merge (select-keys merged before)
+                              (->> (rest after)
+                                   (select-keys merged)
+                                   (map-keys dec)))))))))
 
 (defn next-m
   [m {:keys [j]}]
@@ -115,7 +121,9 @@
   (let [m (prepare-m m lw-updater)
         dim (first (m/shape m))
         state-init {:lw-updater lw-updater
-                    :merged []
+                    :merged (->> (range dim)
+                                 (map #(vector % %))
+                                 (into {}))
                     :clusters (->> (range dim) 
                                    (map #(vector % [% % 0]))
                                    (into {}))}]

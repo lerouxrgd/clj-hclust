@@ -104,7 +104,7 @@ A [newick format][newick] visualisation is also available:
 
 ## License
 
-Copyright &copy; 2015 Romain Leroux
+Copyright &copy; 2016 Romain Leroux
 
 This project is licensed under the [Eclipse Public License 1.0][license].
 
@@ -114,6 +114,6 @@ This project is licensed under the [Eclipse Public License 1.0][license].
 
 [apache-batik]: https://xmlgraphics.apache.org/batik/
 
-[newick]: https://fr.wikipedia.org/wiki/Newick
+[newick]: https://en.wikipedia.org/wiki/Newick_format
 
 [license]: http://www.eclipse.org/legal/epl-v10.html

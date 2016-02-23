@@ -29,11 +29,11 @@
   (testing "Testing clust-size, correct sizes after 1 merge"
     (is (= (clust-size 1 ; idx 1 corresponds to cluster 2
                        {:clusters {0 [[0 0 0] [1 1 0] 0.5], 4 [4 4 0], 3 [3 3 0], 2 [2 2 0]}, 
-                        :merged [1]})
+                        :merged {0 0, 1 2, 2 3, 3 4}})
            1))
     (is (= (clust-size 0 ; idx 0 corresponds to cluster 0 (which is the merge of 0 and 1)
                        {:clusters {0 [[0 0 0] [1 1 0] 0.5], 4 [4 4 0], 3 [3 3 0], 2 [2 2 0]}, 
-                        :merged [1]})
+                        :merged {0 0, 1 2, 2 3, 3 4}})
            2))))
 
 (deftest hclust-lw-test
