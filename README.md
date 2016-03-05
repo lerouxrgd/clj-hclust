@@ -7,7 +7,7 @@ A [hierarchical clustering][hc] and visualisation library for clojure based on c
 Add the following dependency to your `project.clj` file:
 
 ```clj
-[clj-hclust "0.1.0"]
+[clj-hclust "0.1.1"]
 ```
 
 ## Usage
