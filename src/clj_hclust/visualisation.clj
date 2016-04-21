@@ -9,11 +9,12 @@
 
 (defn hclust->points [clustering style]
   (let [xmax (get-in style [:params :dendro-width]) ; svg max width (w/o radius and text)
-        rad (get-in style [:circle-style :r]); ; svg max heigt = 2*rad*nb-leaves
+        rad  (get-in style [:circle-style :r]); ; svg max heigt = 2*rad*nb-leaves
         dmax (last clustering)
         nb-leaves (atom 0)
         bary-stack (java.util.ArrayDeque.)
         points (atom (transient []))]
+    
     (clojure.walk/postwalk
      (fn [elem]
        (when (sequential? elem)
@@ -21,6 +22,7 @@
                shape-l (shape l) 
                shape-r (shape r)]
            (cond
+
              ;; elem is the merge of two leaves
              (and (= :leaf shape-l) (= :leaf shape-r))
              (let [y-leaf1 (* rad (+ 1 (* 2 @nb-leaves)))
@@ -29,10 +31,16 @@
                    y-bary (+ y-leaf1 rad)]
                (swap! points 
                       #(-> %
-                           (conj! {:type :fork :y-span [y-leaf1 y-leaf2] :x-span [xmax xmax] 
+                           (conj! {:type :fork 
+                                   :y-span [y-leaf1 y-leaf2] 
+                                   :x-span [xmax xmax] 
                                    :x x-bary :y y-bary})
-                           (conj! {:type :leaf :id (first l) :x xmax :y y-leaf1})
-                           (conj! {:type :leaf :id (first r) :x xmax :y y-leaf2})))
+                           (conj! {:type :leaf 
+                                   :id (first l) 
+                                   :x (+ xmax rad) :y y-leaf1})
+                           (conj! {:type :leaf 
+                                   :id (first r) 
+                                   :x (+ xmax rad) :y y-leaf2})))
                (swap! nb-leaves + 2)
                (.push bary-stack [x-bary y-bary]))
                          
@@ -46,9 +54,13 @@
                    y-bary (/ (+ y-clust y-leaf) 2.)]
                (swap! points
                       #(-> %
-                           (conj! {:type :fork :y-span [y-clust y-leaf] :x-span [x-clust xmax]  
+                           (conj! {:type :fork 
+                                   :y-span [y-clust y-leaf] 
+                                   :x-span [x-clust xmax]  
                                    :x x-bary :y y-bary})
-                           (conj! {:type :leaf :id id-leaf :x xmax :y y-leaf})))
+                           (conj! {:type :leaf 
+                                   :id id-leaf 
+                                   :x (+ xmax rad) :y y-leaf})))
                (swap! nb-leaves + 1)
                (.push bary-stack [x-bary y-bary]))            
 
@@ -59,7 +71,9 @@
                    x-bary (* xmax (- 1. (/ d dmax)))
                    y-bary (/ (+ y-clust1 y-clust2) 2.)]
                (swap! points 
-                      #(conj! % {:type :fork :y-span [y-clust1 y-clust2] :x-span [x-clust1 x-clust2] 
+                      #(conj! % {:type :fork 
+                                 :y-span [y-clust1 y-clust2] 
+                                 :x-span [x-clust1 x-clust2] 
                                  :x x-bary :y y-bary}))
                (.push bary-stack [x-bary y-bary])))))
        elem)

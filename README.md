@@ -2,13 +2,7 @@
 
 A [hierarchical clustering][hc] and visualisation library for clojure based on core.matrix.
 
-## Installation
-
-Add the following dependency to your `project.clj` file:
-
-```clj
-[clj-hclust "0.1.1"]
-```
+[![Clojars Project](https://img.shields.io/clojars/v/clj-hclust.svg)](https://clojars.org/clj-hclust)
 
 ## Usage
 

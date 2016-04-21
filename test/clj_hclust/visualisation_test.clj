@@ -10,6 +10,7 @@
           xmax (get-in svg-default [:params :dendro-width])
           ;; leaves
           rad (get-in svg-default [:circle-style :r])
+          x-leaf (+ xmax rad)
           y-leaf (fn [nb-leaves] (+ rad (* nb-leaves 2 rad)))
           ;; forks
           d1 (last (first C))
@@ -22,11 +23,11 @@
                    (let [res (/ (+ el1 el2) 2)]
                      (if (ratio? res) (double res) res)))]
       ;; leaves
-      (is (= (nth points 1) {:type :leaf, :id 0, :x xmax, :y (y-leaf 0)}))
-      (is (= (nth points 2) {:type :leaf, :id 1, :x xmax, :y (y-leaf 1)}))
-      (is (= (nth points 4) {:type :leaf, :id 2, :x xmax, :y (y-leaf 2)}))
-      (is (= (nth points 5) {:type :leaf, :id 3, :x xmax, :y (y-leaf 3)}))
-      (is (= (nth points 7) {:type :leaf, :id 4, :x xmax, :y (y-leaf 4)}))
+      (is (= (nth points 1) {:type :leaf, :id 0, :x x-leaf, :y (y-leaf 0)}))
+      (is (= (nth points 2) {:type :leaf, :id 1, :x x-leaf, :y (y-leaf 1)}))
+      (is (= (nth points 4) {:type :leaf, :id 2, :x x-leaf, :y (y-leaf 2)}))
+      (is (= (nth points 5) {:type :leaf, :id 3, :x x-leaf, :y (y-leaf 3)}))
+      (is (= (nth points 7) {:type :leaf, :id 4, :x x-leaf, :y (y-leaf 4)}))
       
       ;; fork (merge of leaf0 and leaf1 = clust0)
       (is (= (:x (nth points 0)) (x-fork d1)))
@@ -52,7 +53,7 @@
       (is (= (:x (nth points 8)) (x-fork d4)))
       (is (= (:y (nth points 8)) (y-fork (y-fork (y-fork (y-leaf 2) (y-leaf 3))
                                                  (y-leaf 4))
-                                         (y-fork (y-leaf 0) (y-leaf 1)))))                                    
+                                         (y-fork (y-leaf 0) (y-leaf 1)))))                  
       (is (= (:y-span (nth points 8)) [(y-fork (y-fork (y-leaf 2) (y-leaf 3))
                                                (y-leaf 4)) 
                                        (y-fork (y-leaf 0) (y-leaf 1))]))
