@@ -1,6 +1,7 @@
-(ns clj-hclust.lance-williams
-  (:require [clojure.core.matrix :as m]
-            [medley.core :refer [map-keys]]))
+(ns clj-hclust.core
+  (:require
+   [clojure.core.matrix :as m]
+   [medley.core :refer [map-keys]]))
 
 (m/set-current-implementation :vectorz)
 
@@ -49,6 +50,8 @@
        elem) 
      cluster)
     @res))
+
+;; TODO use protocol during calculation, mmethod for selecting it
 
 (defmulti lw-update
   (fn [dij dik djk state i j k] 

@@ -1,8 +1,9 @@
 (ns clj-hclust.batik
-  (:import [javax.swing JFrame] 
-           [org.apache.batik.dom.svg SAXSVGDocumentFactory]
-           [org.apache.batik.swing JSVGCanvas]                                 
-           [org.apache.batik.util XMLResourceDescriptor]))
+  (:import
+   (javax.swing JFrame) 
+   (org.apache.batik.dom.svg SAXSVGDocumentFactory)
+   (org.apache.batik.swing JSVGCanvas)                                 
+   (org.apache.batik.util XMLResourceDescriptor)))
 
 (defn svg-jframe 
   ([svg-str width height]

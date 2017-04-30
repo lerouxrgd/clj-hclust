@@ -1,5 +1,8 @@
-(ns clj-hclust.visualisation
-  (:require [hiccup.core :as h]))
+(ns clj-hclust.viz
+  (:require
+   [hiccup.core :as h]))
+
+;; TODO display protocol and switch based on #? macro
 
 (defn shape [cluster]
   (cond 
@@ -8,17 +11,17 @@
     :else :cluster))
 
 (defn hclust->points [clustering style]
-  (let [xmax (get-in style [:params :dendro-width]) ; svg max width (w/o radius and text)
-        rad  (get-in style [:circle-style :r]); ; svg max heigt = 2*rad*nb-leaves
+  (let [xmax (get-in style [:params :dendro-width]) ;; svg max width (w/o radius and text)
+        rad  (get-in style [:circle-style :r]) ;; svg max heigt = 2*rad*nb-leaves
         dmax (last clustering)
         nb-leaves (atom 0)
-        bary-stack (java.util.ArrayDeque.)
+        bary-stack (atom (list))
         points (atom (transient []))]
     
     (clojure.walk/postwalk
      (fn [elem]
        (when (sequential? elem)
-         (let [[l r d] elem ; all sequential elements match [left right distance]
+         (let [[l r d] elem ;; all sequential elements match [left right distance]
                shape-l (shape l) 
                shape-r (shape r)]
            (cond
@@ -42,12 +45,13 @@
                                    :id (first r) 
                                    :x (+ xmax rad) :y y-leaf2})))
                (swap! nb-leaves + 2)
-               (.push bary-stack [x-bary y-bary]))
+               (swap! bary-stack conj [x-bary y-bary]))
                          
              ;; elem is the merge of a cluster and a leaf
              (or (and (= :cluster shape-l) (= :leaf shape-r))
                  (and (= :leaf shape-l) (= :cluster shape-r)))
-             (let [[x-clust y-clust] (.poll bary-stack)
+             (let [[x-clust y-clust] (peek @bary-stack)
+                   _ (swap! bary-stack pop)
                    y-leaf (* rad (+ 1 (* 2 @nb-leaves)))
                    id-leaf (first (if (= :leaf shape-r) r l))
                    x-bary (* xmax (- 1. (/ d dmax)))
@@ -62,12 +66,14 @@
                                    :id id-leaf 
                                    :x (+ xmax rad) :y y-leaf})))
                (swap! nb-leaves + 1)
-               (.push bary-stack [x-bary y-bary]))            
+               (swap! bary-stack conj [x-bary y-bary]))            
 
              ;; elem is the merge of two clusters
              (and (= :cluster shape-l) (= :cluster shape-r))
-             (let [[x-clust1 y-clust1] (.poll bary-stack)
-                   [x-clust2 y-clust2] (.poll bary-stack)
+             (let [[x-clust1 y-clust1] (peek @bary-stack)
+                   _ (swap! bary-stack pop)
+                   [x-clust2 y-clust2] (peek @bary-stack)
+                   _ (swap! bary-stack pop)
                    x-bary (* xmax (- 1. (/ d dmax)))
                    y-bary (/ (+ y-clust1 y-clust2) 2.)]
                (swap! points 
@@ -75,7 +81,7 @@
                                  :y-span [y-clust1 y-clust2] 
                                  :x-span [x-clust1 x-clust2] 
                                  :x x-bary :y y-bary}))
-               (.push bary-stack [x-bary y-bary])))))
+               (swap! bary-stack conj [x-bary y-bary])))))
        elem)
      clustering)
     (persistent! @points)))

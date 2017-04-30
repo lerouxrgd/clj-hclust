@@ -1,8 +1,9 @@
-(ns clj-hclust.lance-williams-test
-  (:require [clojure.test :refer :all]
-            [clj-hclust.lance-williams :refer :all]
-            [clj-hclust.test-utils :refer :all]
-            [clojure.core.matrix :as m]))
+(ns clj-hclust.core-test
+  (:require
+   [clojure.test :refer :all]
+   [clj-hclust.core :refer :all]
+   [clj-hclust.test-utils :refer :all]
+   [clojure.core.matrix :as m]))
 
 (m/set-current-implementation :vectorz)
 

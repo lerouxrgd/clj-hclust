@@ -1,6 +1,7 @@
-(ns clj-hclust.visualisation-test
-  (:require [clojure.test :refer :all]         
-            [clj-hclust.visualisation :refer :all]))
+(ns clj-hclust.viz-test
+  (:require
+   [clojure.test :refer :all]
+   [clj-hclust.viz :refer :all]))
 
 (def C [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24])
 
