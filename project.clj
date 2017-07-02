@@ -1,4 +1,4 @@
-(defproject clj-hclust "0.3.0"
+(defproject clj-hclust "0.2.0"
   :description "Hierarchical clustering and visualisation for clojure"
   :url "https://github.com/lerouxrgd/clj-hclust"
   :license {:name "Eclipse Public License"
