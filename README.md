@@ -12,7 +12,7 @@ A leaf is simply `[id-self id-self 0]` where `id-self` is its index in the matri
 Here is a simple example:
 
 ```clj
-(require '[clj-hclust.lance-williams :as lw]
+(require '[clj-hclust.core :as hc]
          '[clojure.core.matrix :as m])
 
 (def M (m/matrix
@@ -23,7 +23,7 @@ Here is a simple example:
          [3.00 3.04 1.41 1.50 0.00]]))
 
 (-> M
-    (lw/hclust-lw :single-link))
+    (hc/hclust-lw :single-link))
     
 ;;=> [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24]
 ```
@@ -38,17 +38,8 @@ Note that the selected implementation must support `emap!` from the core.matrix 
 
 The [Lance–Williams algorithms][lance-williams] are an infinite family of agglomerative [hierarchical clustering][hc] algorithms which are represented by a recursive formula for updating cluster distances at each step (each time a pair of clusters is merged).
 
-The namespace `clj-hclust.lance-williams` defines a multimethod that allows for custom implementations of such algorithms:
-
-```clj
-(defmulti lw-update
-  (fn [dij dik djk state i j k] 
-    (:lw-updater state)))
-```
-
-Where the parameter `state` is a map containing `:clusters`, the vector of the current merges.
-
-The multimethod implementations provided are:
+The multimethod `lw-updater` allows for custom implementations of such algorithms.
+Available implementations are:
 
 * `:single-link` uses min when merging
 * `:complete-link` uses max when merging
@@ -57,7 +48,7 @@ The multimethod implementations provided are:
 ## Visualisation
 
 ```clj
-(require '[clj-hclust.visualisation :as viz])
+(require '[clj-hclust.viz :as viz])
 ```
 
 ### SVG format
@@ -68,7 +59,7 @@ A simple [batik][apache-batik] based `JFrame` visualisation is available (note t
 (require '[clj-hclust.batik :as b])
 
 (-> M
-    (lw/hclust-lw :single-link)
+    (hc/hclust-lw :single-link)
     (viz/hclust->svg)
     (b/svg-jframe 600 100))
 ```
@@ -77,7 +68,7 @@ SVG visualisation parameters can be customized:
 
 ```clj
 (-> M
-    (lw/hclust-lw :single-link)
+    (hc/hclust-lw :single-link)
     (viz/hclust->svg {:names ["Rochefort" "Milady" "Athos" "Portos" "Aramis"]
                       :circle-style {:r 10}
                       :text-style {:dx 16 :dy 6 :font "14px sans-serif"}})
@@ -90,7 +81,7 @@ A [newick format][newick] visualisation is also available:
 
 ```clj
 (-> M
-    (lw/hclust-lw :single-link)
+    (hc/hclust-lw :single-link)
     (viz/hclust->newick))
 
 ;;=> "(((0:0,1:0):0.5,((2:0,3:0):1.12,4:0):1.41):2.24);"
@@ -98,7 +89,7 @@ A [newick format][newick] visualisation is also available:
 
 ## License
 
-Copyright &copy; 2016 Romain Leroux
+Copyright &copy; 2017 Romain Leroux
 
 This project is licensed under the [Eclipse Public License 1.0][license].
 

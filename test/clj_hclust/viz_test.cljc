@@ -54,7 +54,7 @@
       (is (= (:x (nth points 8)) (x-fork d4)))
       (is (= (:y (nth points 8)) (y-fork (y-fork (y-fork (y-leaf 2) (y-leaf 3))
                                                  (y-leaf 4))
-                                         (y-fork (y-leaf 0) (y-leaf 1)))))                  
+                                         (y-fork (y-leaf 0) (y-leaf 1)))))      
       (is (= (:y-span (nth points 8)) [(y-fork (y-fork (y-leaf 2) (y-leaf 3))
                                                (y-leaf 4)) 
                                        (y-fork (y-leaf 0) (y-leaf 1))]))

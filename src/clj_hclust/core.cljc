@@ -5,14 +5,14 @@
 
 (m/set-current-implementation :vectorz)
 
-(defn prepare-m [m lw-updater]
+(defn prepare-m [m lw]
   {:pre [(m/square? m)]}
   (let [unchanged? (atom true)
         m (cond-> m
             (m/lower-triangular? m) 
             (do (reset! unchanged? false)
                 (m/transpose m))
-            (= :ward lw-updater) 
+            (= :ward lw) 
             (do (reset! unchanged? false)
                 (m/matrix (map #(m/square %) (m/slices m)))))]
     (if @unchanged?
@@ -22,7 +22,7 @@
 (defn find-dmin [m]
   (reduce (fn [acc s]
             (let [jmin (->> (map-indexed vector s)
-                            (filter #(> (first %) (:curr acc))) ; only above diag
+                            (filter #(> (first %) (:curr acc))) ;; only above diag
                             (apply min-key second)
                             first)
                   smin (m/mget s jmin)]
@@ -51,37 +51,33 @@
      cluster)
     @res))
 
-;; TODO use protocol during calculation, mmethod for selecting it
+(defmulti lw-updater
+  (fn [lw] lw))
 
-(defmulti lw-update
-  (fn [dij dik djk state i j k] 
-    (:lw-updater state)))
+(defmethod lw-updater :single-link [_]
+  (fn [dij dik djk state i j k]
+    (min dik djk)))
 
-(defmethod lw-update :single-link
-  [dij dik djk state i j k]
-  (min dik djk))
+(defmethod lw-updater :complete-link [_]
+  (fn [dij dik djk state i j k]
+    (max dik djk)))
 
-(defmethod lw-update :complete-link
-  [dij dik djk state i j k]
-  (max dik djk))
+(defmethod lw-updater :ward [_]
+  (fn [dij dik djk state i j k]
+    (let [ni (clust-size i state)
+          nj (clust-size j state)
+          nk (clust-size k state)
+          n (+ ni nj nk)]
+      (+ (* dik (/ (+ ni nk) n))
+         (* djk (/ (+ nj nk) n))
+         (* -1. dij (/ nk n))))))
 
-(defmethod lw-update :ward
-  [dij dik djk state i j k]
-  (let [ni (clust-size i state)
-        nj (clust-size j state)
-        nk (clust-size k state)
-        n (+ ni nj nk)]
-    (+ (* dik (/ (+ ni nk) n))
-       (* djk (/ (+ nj nk) n))
-       (* -1. dij (/ nk n)))))
-
-(defmethod lw-update :default
-  [dij dik djk state i j k]
+(defmethod lw-updater :default [lw]
   (throw (IllegalArgumentException. 
-          (str "No implementation for lw-updater " (:lw-updater state)))))
+          (str "No implementation for lw-updater " lw))))
 
 (defn merge-clusters!
-  [m {:keys [i j dij]} state]
+  [m {:keys [i j dij]} lw-update state]
   (doall
    (map (fn [getter]
           (let [dim (first (m/shape m))]
@@ -120,11 +116,11 @@
         subv (filter #(not= % j) (range dim))]
     (m/matrix (m/select m subv subv))))
 
-(defn hclust-lw [m lw-updater]
-  (let [m (prepare-m m lw-updater)
+(defn hclust-lw [m lw]
+  (let [m (prepare-m m lw)
         dim (first (m/shape m))
-        state-init {:lw-updater lw-updater
-                    :merged (->> (range dim)
+        lw-update (lw-updater lw)
+        state-init {:merged (->> (range dim)
                                  (map #(vector % %))
                                  (into {}))
                     :clusters (->> (range dim) 
@@ -132,8 +128,8 @@
                                    (into {}))}]
     (loop [m m state state-init]
       (if (= 1 (first (m/shape m)))
-        (val (first (:clusters state))) ; only one kv-pair left, return its val
+        (val (first (:clusters state))) ;; only one kv-pair left, return its val
         (let [dmin (find-dmin m)]
-          (merge-clusters! m dmin state)
+          (merge-clusters! m dmin lw-update state)
           (recur (next-m m dmin) (next-state state dmin)))))))
 

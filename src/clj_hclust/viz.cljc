@@ -2,8 +2,6 @@
   (:require
    [hiccup.core :as h]))
 
-;; TODO display protocol and switch based on #? macro
-
 (defn shape [cluster]
   (cond 
     (not (sequential? cluster)) :value
