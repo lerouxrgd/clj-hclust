@@ -21,10 +21,9 @@ Here is a simple example:
          [2.24 2.50 0.00 1.12 1.41]
          [3.35 3.61 1.12 0.00 1.50]
          [3.00 3.04 1.41 1.50 0.00]]))
-
-(-> M
-    (hc/hclust-lw :single-link))
     
+(hc/hclust-lw M :single-link)
+
 ;;=> [[[0 0 0] [1 1 0] 0.5] [[[2 2 0] [3 3 0] 1.12] [4 4 0] 1.41] 2.24]
 ```
 
@@ -45,11 +44,7 @@ Available implementations are:
 * `:complete-link` uses max when merging
 * `:ward` minimizes the total within-cluster variance when merging 
 
-## Visualisation
-
-```clj
-(require '[clj-hclust.viz :as viz])
-```
+## Visualization
 
 ### SVG format
 
@@ -60,7 +55,7 @@ A simple [batik][apache-batik] based `JFrame` visualisation is available (note t
 
 (-> M
     (hc/hclust-lw :single-link)
-    (viz/hclust->svg)
+    (hc/hclust->svg)
     (b/svg-jframe 600 100))
 ```
 
@@ -69,9 +64,9 @@ SVG visualisation parameters can be customized:
 ```clj
 (-> M
     (hc/hclust-lw :single-link)
-    (viz/hclust->svg {:names ["Rochefort" "Milady" "Athos" "Portos" "Aramis"]
-                      :circle-style {:r 10}
-                      :text-style {:dx 16 :dy 6 :font "14px sans-serif"}})
+    (hc/hclust->svg {:names ["Rochefort" "Milady" "Athos" "Portos" "Aramis"]
+                     :circle-style {:r 10}
+                     :text-style {:dx 16 :dy 6 :font "14px sans-serif"}})
     (b/svg-jframe 700 150))
 ```
 
@@ -82,14 +77,14 @@ A [newick format][newick] visualisation is also available:
 ```clj
 (-> M
     (hc/hclust-lw :single-link)
-    (viz/hclust->newick))
+    (hc/hclust->newick))
 
 ;;=> "(((0:0,1:0):0.5,((2:0,3:0):1.12,4:0):1.41):2.24);"
 ```
 
 ## License
 
-Copyright &copy; 2017 Romain Leroux
+Copyright &copy; Romain Leroux
 
 This project is licensed under the [Eclipse Public License 1.0][license].
 
