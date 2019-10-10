@@ -10,10 +10,10 @@
   {:pre [(m/square? m)]}
   (let [unchanged? (atom true)
         m (cond-> m
-            (m/lower-triangular? m) 
+            (m/lower-triangular? m)
             (do (reset! unchanged? false)
                 (m/transpose m))
-            (= :ward lw) 
+            (= :ward lw)
             (do (reset! unchanged? false)
                 (m/matrix (map #(m/square %) (m/slices m)))))]
     (if @unchanged?
@@ -45,10 +45,10 @@
         cluster (get (:clusters state) c-id)
         res (atom 0)]
     (clojure.walk/postwalk
-     (fn [elem] 
+     (fn [elem]
        (when (and (sequential? elem) (not (sequential? (first elem))))
          (swap! res inc))
-       elem) 
+       elem)
      cluster)
     @res))
 
@@ -74,7 +74,7 @@
          (* -1. dij (/ nk n))))))
 
 (defmethod lw-updater :default [lw]
-  (throw (IllegalArgumentException. 
+  (throw (IllegalArgumentException.
           (str "No implementation for lw-updater " lw))))
 
 (defn merge-clusters!
@@ -85,7 +85,7 @@
             (m/emap! (fn [dik djk k]
                        (if (or (= i k) (= j k))
                          dik
-                         (lw-update dij dik djk state i j k))) 
+                         (lw-update dij dik djk state i j k)))
                      (getter m i)
                      (getter m j)
                      (range dim))))
@@ -97,9 +97,9 @@
   (let [idx j
         i (clust-id i state)
         j (clust-id j state)]
-    (-> state 
+    (-> state
         (assoc-in [:clusters i]
-                  (vector (get-in state [:clusters i]) 
+                  (vector (get-in state [:clusters i])
                           (get-in state [:clusters j])
                           dij))
         (update-in [:clusters] dissoc j)
@@ -124,7 +124,7 @@
         state-init {:merged (->> (range dim)
                                  (map #(vector % %))
                                  (into {}))
-                    :clusters (->> (range dim) 
+                    :clusters (->> (range dim)
                                    (map #(vector % [% % 0]))
                                    (into {}))}]
     (loop [m m state state-init]
@@ -137,7 +137,7 @@
 ;; Visualization
 
 (defn shape [cluster]
-  (cond 
+  (cond
     (not (sequential? cluster)) :value
     (not (sequential? (first cluster))) :leaf
     :else :cluster))
@@ -149,12 +149,12 @@
         nb-leaves (atom 0)
         bary-stack (atom (list))
         points (atom (transient []))]
-    
+
     (clojure.walk/postwalk
      (fn [elem]
        (when (sequential? elem)
          (let [[l r d] elem ;; all sequential elements match [left right distance]
-               shape-l (shape l) 
+               shape-l (shape l)
                shape-r (shape r)]
            (cond
 
@@ -164,21 +164,21 @@
                    y-leaf2 (+ y-leaf1 (* 2 rad))
                    x-bary (* xmax (- 1. (/ d dmax)))
                    y-bary (+ y-leaf1 rad)]
-               (swap! points 
+               (swap! points
                       #(-> %
-                           (conj! {:type :fork 
-                                   :y-span [y-leaf1 y-leaf2] 
-                                   :x-span [xmax xmax] 
+                           (conj! {:type :fork
+                                   :y-span [y-leaf1 y-leaf2]
+                                   :x-span [xmax xmax]
                                    :x x-bary :y y-bary})
-                           (conj! {:type :leaf 
-                                   :id (first l) 
+                           (conj! {:type :leaf
+                                   :id (first l)
                                    :x (+ xmax rad) :y y-leaf1})
-                           (conj! {:type :leaf 
-                                   :id (first r) 
+                           (conj! {:type :leaf
+                                   :id (first r)
                                    :x (+ xmax rad) :y y-leaf2})))
                (swap! nb-leaves + 2)
                (swap! bary-stack conj [x-bary y-bary]))
-                         
+
              ;; elem is the merge of a cluster and a leaf
              (or (and (= :cluster shape-l) (= :leaf shape-r))
                  (and (= :leaf shape-l) (= :cluster shape-r)))
@@ -190,15 +190,15 @@
                    y-bary (/ (+ y-clust y-leaf) 2.)]
                (swap! points
                       #(-> %
-                           (conj! {:type :fork 
-                                   :y-span [y-clust y-leaf] 
-                                   :x-span [x-clust xmax]  
+                           (conj! {:type :fork
+                                   :y-span [y-clust y-leaf]
+                                   :x-span [x-clust xmax]
                                    :x x-bary :y y-bary})
-                           (conj! {:type :leaf 
-                                   :id id-leaf 
+                           (conj! {:type :leaf
+                                   :id id-leaf
                                    :x (+ xmax rad) :y y-leaf})))
                (swap! nb-leaves + 1)
-               (swap! bary-stack conj [x-bary y-bary]))            
+               (swap! bary-stack conj [x-bary y-bary]))
 
              ;; elem is the merge of two clusters
              (and (= :cluster shape-l) (= :cluster shape-r))
@@ -208,10 +208,10 @@
                    _ (swap! bary-stack pop)
                    x-bary (* xmax (- 1. (/ d dmax)))
                    y-bary (/ (+ y-clust1 y-clust2) 2.)]
-               (swap! points 
-                      #(conj! % {:type :fork 
-                                 :y-span [y-clust1 y-clust2] 
-                                 :x-span [x-clust1 x-clust2] 
+               (swap! points
+                      #(conj! % {:type :fork
+                                 :y-span [y-clust1 y-clust2]
+                                 :x-span [x-clust1 x-clust2]
                                  :x x-bary :y y-bary}))
                (swap! bary-stack conj [x-bary y-bary])))))
        elem)
@@ -233,7 +233,7 @@
         id->name (if-let [names (:names style)]
                    (fn [id] (get names id))
                    identity)]
-    (loop [svg (transient [:svg xmlns]) 
+    (loop [svg (transient [:svg xmlns])
            [point & others] points]
       (if point
         (cond
